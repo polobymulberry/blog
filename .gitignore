@@ -12,3 +12,4 @@ coverage/
 .vscode
 dist/
 public/
+db.json
