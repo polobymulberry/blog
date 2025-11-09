@@ -3,13 +3,13 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
-subtitle: ''
-description: ''
+title: Mulberry's Blog
+subtitle: '沉淀自我'
+description: '专注3D应用全栈研发<br>分享产品思考与实践'
 keywords:
-author: John Doe
-language: en
-timezone: ''
+author: Pan Jianxiong
+language: zh-CN
+timezone: 'Asia/Shanghai'
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
