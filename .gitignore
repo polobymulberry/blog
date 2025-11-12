@@ -13,3 +13,4 @@ coverage/
 dist/
 public/
 db.json
+.deploy_git/
