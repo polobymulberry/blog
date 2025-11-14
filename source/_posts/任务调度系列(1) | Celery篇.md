@@ -28,7 +28,44 @@ categories:
 
 ## 0x02 : 基于数据库的任务调度方案
 
-这时候你又想到了一个绝妙的方案，弄一个机器作为master来统一管理所有机器的状态以及所有任务的分配，这也是中心化任务分配的思路。master机器上用数据库存储了100w段文本转图像任务（任务状态为WAITING），然后让10台机器去数据库中取待运行的任务，同时更新任务的状态（WAITING -> SCHEDULED），直到任务运行（RUNNING）完毕，将任务的状态更新为COMPLETED，这样其他机器就不会重复运行该任务了。经过这套机制，基本上解决了负载均衡的问题，因为空闲的机器会自己去master机器拉取任务运行，这也是最基本的负载均衡算法Round Robin。
+这时候你又想到了一个绝妙的方案，弄一个机器作为master来统一管理所有机器的状态以及所有任务的分配，这也是中心化任务分配的思路。master机器上用数据库存储了100w段文本转图像任务（任务状态为WAITING），然后让10台机器去数据库中取待运行的任务，同时更新任务的状态（WAITING -> RUNNING），直到任务运行完毕，将任务的状态更新为COMPLETED，这样其他机器就不会重复运行该任务了。经过这套机制，基本上解决了负载均衡的问题，因为空闲的机器会自己去master机器拉取任务运行，这也是最基本的负载均衡算法Round Robin。
+
+
+<div style="text-align: center;">
+
+```mermaid
+flowchart TB
+    subgraph Master["Master 节点"]
+        direction LR
+        MasterNode[Master 节点任务调度逻辑]
+    end
+
+    subgraph DBGroup[" "]
+        direction LR
+        DB[(MySQL 数据库<br/>存储 100w 任务<br/>)]
+        Note["任务状态类型<br/>WAITING / RUNNING / COMPLETED"]
+        DB -.- Note
+    end
+
+    subgraph Worker["Worker 节点(共10台)"]
+        direction LR
+        Worker0[Worker 0]
+        Worker1[Worker 1]
+        Dots[…]
+        Worker9[Worker 9]
+    end
+
+    %% Master 与数据库
+    MasterNode <--> DBGroup
+
+    %% Workers 与 Master 节点
+    Worker0 -- 空闲中，拉取Status==WAITING的任务 --> MasterNode
+    Worker1 -- 任务结束，写回结果，Status置为COMPLETED --> MasterNode
+    Worker9 -- 开始运行，Status置为RUNNING --> MasterNode
+```
+
+</div>
+
 
 
 还剩下一个失败重试的问题。失败分为两种情况：1.重试一下也可以正常运行 2.重试多次也不行。这时候你就需要有个定时服务，去轮询数据库中任务的状态，比如长时间任务的状态（RUNNING）一直没更新，那就认为任务超时失败了（TIMEOUT），或者任务的状态是FAILED，那就重试任务。如果失败超过3次就默认这个任务最终是失败的。
